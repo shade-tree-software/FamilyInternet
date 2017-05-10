@@ -11,22 +11,28 @@
     </div>
   <% end %>
 
-  <div class="field">
-    <%= form.label :name %>
-    <%= form.text_field :name, id: :user_name %>
-  </div>
+  <p>Name: <span class="name"><%= user.name %></span></p>
+
+  <p>Countdown: <span class="countdown"><%= user.countdown %></span></p>
 
   <div class="field">
     <%= form.label :active %>
     <%= form.check_box :active, id: :user_active %>
   </div>
 
-  <div class="field">
-    <%= form.label :countdown %>
-    <%= form.number_field :countdown, id: :user_countdown %>
-  </div>
-
   <div class="actions">
     <%= form.submit %>
   </div>
 <% end %>
+
+<script>
+  $(document).ready(function(){
+    setInterval(function(){
+      fetch('<%= "/users/#{user.id}.json" %>').then(function(response){
+        return response.json();
+      }).then(function(j){
+          $('span[class=countdown]').text(j.countdown);
+      });
+    }, 10000);
+  });
+</script>
