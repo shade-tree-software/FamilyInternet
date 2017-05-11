@@ -5,22 +5,25 @@
 <table class="table">
   <thead>
     <tr>
-      <th></th>
       <th>Name</th>
-      <th>Status</th>
       <th>Time Remaining</th>
-      <th colspan="1"></th>
+      <th>Status</th>
+      <th>Active</th>
     </tr>
   </thead>
 
   <tbody>
     <% @users.each do |user| %>
       <tr data-user-id="<%= user.id %>">
-        <td><input checked data-toggle="toggle" type="checkbox"></td>
         <td><%= user.name %></td>
-        <td class="user-active"><%= user.active %></td>
-        <td class="user-countdown"><%= user.countdown %></td>
-        <td><%= link_to 'Edit', edit_user_path(user) %></td>
+        <td id='<%= "user#{user.id}-countdown" %>'><%= user.countdown %></td>
+        <td><input id='<%= "user#{user.id}-status" %>'
+                   class='user-status'
+                   <%= user.active ? 'checked' : '' %>
+                   data-toggle="toggle"
+                   data-userid='<%= user.id %>'
+                   type="checkbox"></td>
+        <td id='<%= "user#{user.id}-active" %>'><%= user.active %></td>
       </tr>
     <% end %>
   </tbody>
@@ -30,14 +33,23 @@
 
 <script>
   $(document).ready(function(){
+    $('.user-status').change(function() {
+      $.ajax({
+		    type: 'POST', // Use POST with X-HTTP-Method-Override or a straight PUT if appropriate.
+		    dataType: 'json', // Set datatype - affects Accept header
+		    url: '/users/' +  $(this).attr('data-userid') + '.json', // A valid URL
+		    headers: {"X-HTTP-Method-Override": "PUT"}, // X-HTTP-Method-Override set to PUT.
+		    data: {user: {active: $(this).is(':checked')}} // Some data e.g. Valid JSON as a string
+		}).bind(this);
+    });
     setInterval(function(){
       fetch('/users.json').then(function(response){
         return response.json();
       }).then(function(j){
         j.forEach(function(user){
           var $user = $('tr[data-user-id=' + user.id + ']');
-          $user.find('td[class=user-active]').text(user.active);
-          $user.find('td[class=user-countdown]').text(user.countdown);
+          $user.find('td#user' + user.id + '-active').text(user.active);
+          $user.find('td#user' + user.id + '-countdown').text(user.countdown);
         });
       });
     }, 10000);
