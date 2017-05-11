@@ -1,13 +1,14 @@
 <p id="notice"><%= notice %></p>
 
-<h1>Users</h1>
+<h1>Internet Access</h1>
 
-<table>
+<table class="table">
   <thead>
     <tr>
+      <th></th>
       <th>Name</th>
-      <th>Active</th>
-      <th>Countdown</th>
+      <th>Status</th>
+      <th>Time Remaining</th>
       <th colspan="1"></th>
     </tr>
   </thead>
@@ -15,6 +16,7 @@
   <tbody>
     <% @users.each do |user| %>
       <tr data-user-id="<%= user.id %>">
+        <td><input checked data-toggle="toggle" type="checkbox"></td>
         <td><%= user.name %></td>
         <td class="user-active"><%= user.active %></td>
         <td class="user-countdown"><%= user.countdown %></td>
