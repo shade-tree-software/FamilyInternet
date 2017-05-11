@@ -16,17 +16,17 @@
   <p>Countdown: <span class="countdown"><%= user.countdown %></span></p>
 
   <div class="field">
-    <%= form.label :active %>
-    <%= form.check_box :active, id: :user_active %>
+    <%= form.check_box :active, id: :user_active, 'data-toggle': 'toggle' %>
   </div>
 
   <div class="actions">
-    <%= form.submit %>
+    <%= form.submit class: 'btn btn-primary'%>
   </div>
 <% end %>
 
 <script>
   $(document).ready(function(){
+    $('#user_active').bootstrapToggle();
     setInterval(function(){
       fetch('<%= "/users/#{user.id}.json" %>').then(function(response){
         return response.json();
