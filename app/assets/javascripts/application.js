@@ -13,6 +13,7 @@
 //= require jquery-3.2.1.min
 //= require bootstrap.min
 //= require bootstrap-toggle.min
+//= require toastr
 //= require rails-ujs
 //= require turbolinks
 //= require_tree .

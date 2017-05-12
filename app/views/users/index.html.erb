@@ -6,7 +6,7 @@
   <thead>
     <tr>
       <th>Name</th>
-      <th>Time Remaining</th>
+      <th>Minutes Remaining</th>
       <th>Status</th>
       <th>Active</th>
     </tr>
@@ -16,7 +16,7 @@
     <% @users.each do |user| %>
       <tr data-user-id="<%= user.id %>">
         <td><%= user.name %></td>
-        <td id='<%= "user#{user.id}-countdown" %>'><%= user.countdown %></td>
+        <td id='<%= "user#{user.id}-countdown" %>'><%= user.countdown / 60 %></td>
         <td><input id='<%= "user#{user.id}-status" %>'
                    class='user-status'
                    <%= user.active ? 'checked' : '' %>
@@ -34,13 +34,34 @@
 <script>
   $(document).ready(function(){
     $('.user-status').change(function() {
+      $(this).bootstrapToggle('disable');
+      var checked = $(this).is(':checked');
       $.ajax({
+        context: this,
 		    type: 'POST', // Use POST with X-HTTP-Method-Override or a straight PUT if appropriate.
 		    dataType: 'json', // Set datatype - affects Accept header
 		    url: '/users/' +  $(this).attr('data-userid') + '.json', // A valid URL
 		    headers: {"X-HTTP-Method-Override": "PUT"}, // X-HTTP-Method-Override set to PUT.
-		    data: {user: {active: $(this).is(':checked')}} // Some data e.g. Valid JSON as a string
-		}).bind(this);
+		    data: {user: {active: checked}}, // Some data e.g. Valid JSON as a string
+        success: function(){
+		      if (checked) {
+              toastr.success('Internet successfully enabled.');
+          }else{
+              toastr.info('Internet successfully disabled.');
+          }
+		    },
+        error: function(){
+            toastr.error('Unable to ' + (checked ? 'enable' : 'disable') + ' internet.');
+            // revert the slide toggle without triggering the event handler
+            $(this).prop('checked', !checked);
+            $(this).parent().toggleClass('off');
+            $(this).parent().toggleClass('btn-primary');
+            $(this).parent().toggleClass('btn-default');
+        },
+        complete: function(){
+            $(this).bootstrapToggle('enable');
+        }
+		  });
     });
     setInterval(function(){
       fetch('/users.json').then(function(response){
@@ -49,7 +70,7 @@
         j.forEach(function(user){
           var $user = $('tr[data-user-id=' + user.id + ']');
           $user.find('td#user' + user.id + '-active').text(user.active);
-          $user.find('td#user' + user.id + '-countdown').text(user.countdown);
+          $user.find('td#user' + user.id + '-countdown').text(user.countdown / 60);
         });
       });
     }, 10000);
