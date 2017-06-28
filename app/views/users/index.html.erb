@@ -16,7 +16,7 @@
     <% @users.each do |user| %>
       <tr data-user-id="<%= user.id %>">
         <td><%= user.name %></td>
-        <td id='<%= "user#{user.id}-countdown" %>'><%= user.countdown / 60 %></td>
+        <td id='<%= "user#{user.id}-countdown" %>'><%= user.expiration ? 'calculating...' : 'unlimited' %></td>
         <td><input id='<%= "user#{user.id}-status" %>'
                    class='user-status'
                    <%= user.active ? 'checked' : '' %>
@@ -63,16 +63,31 @@
         }
 		  });
     });
+    var USER_FETCH_INTERVAL = 10000;
     setInterval(function(){
+      // Fetch updated user info periodically
       fetch('/users.json').then(function(response){
         return response.json();
-      }).then(function(j){
-        j.forEach(function(user){
+      }).then(function(users){
+        users.forEach(function(user){
           var $user = $('tr[data-user-id=' + user.id + ']');
           $user.find('td#user' + user.id + '-active').text(user.active);
-          $user.find('td#user' + user.id + '-countdown').text(user.countdown / 60);
+          var minutesRemaining = 0;
+          if (user.active) {
+            // If user is active, calculate minutes remaining based on user.expiration
+            var currentTimeInSecs = parseInt(((+new Date()) / 1000).toFixed(0), 10);
+            var expirationTime = user.expiration || currentTimeInSecs;
+            var secondsRemaining = expirationTime - currentTimeInSecs;
+            if (secondsRemaining >= 0) {
+              minutesRemaining = (secondsRemaining / 60).toFixed(0);
+            }
+          } else {
+            // If user is not active, minutes remaining is user.countdown / 60
+            minutesRemaining = (user.countdown / 60).toFixed(0);
+          }
+          $user.find('td#user' + user.id + '-countdown').text(minutesRemaining);
         });
       });
-    }, 10000);
+    }, USER_FETCH_INTERVAL);
   });
 </script>

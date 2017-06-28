@@ -49,7 +49,22 @@ class UsersController < ApplicationController
   # PATCH/PUT /users/1.json
   def update
     respond_to do |format|
-      if @user.update(user_params)
+      attrs = user_params.as_json
+      expiration_time = @user.expiration || Time.now.to_i
+      # If switching from inactive to active user, set new expiration time
+      # based on previously stored countdown value
+      if @user.active == false && (attrs['active'] == 'true' || attrs['active'] == true)
+        attrs[:expiration] = expiration_time = Time.now.to_i + @user.countdown
+      end
+
+      #TODO: fail update if active requested but no minutes remaining
+
+      # Update countdown based on difference between current time and expiration time
+      secs_left = (expiration_time - Time.now.to_i)
+      secs_left = secs_left >= 0 ? secs_left : 0
+      attrs[:countdown] = secs_left
+      puts attrs
+      if @user.update(attrs)
         format.html { redirect_to action: "index", notice: 'User was successfully updated.' }
         format.json { render :show, status: :ok, location: @user }
       else
@@ -77,6 +92,6 @@ class UsersController < ApplicationController
 
     # Never trust parameters from the scary internet, only allow the white list through.
     def user_params
-      params.require(:user).permit(:name, :active, :countdown)
+      params.require(:user).permit(:active)
     end
 end
