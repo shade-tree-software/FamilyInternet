@@ -33,6 +33,8 @@
 
 <script>
   $(document).ready(function () {
+    $('input.user-status').bootstrapToggle();
+
     var toggleUserActive = function () {
       $(this).bootstrapToggle('disable');
       var checked = $(this).is(':checked');
@@ -52,7 +54,7 @@
         },
         error: function () {
           toastr.error('Unable to ' + (checked ? 'enable' : 'disable') + ' internet.');
-          // revert the slide toggle without triggering the event handler
+          // revert the slide toggle without triggering a change event
           $(this).prop('checked', !checked);
           $(this).parent().toggleClass('off');
           $(this).parent().toggleClass('btn-primary');
@@ -65,21 +67,35 @@
     };
     $('.user-status').change(toggleUserActive);
 
+    var setToggleState = function ($toggleElem, newState) {
+      // Update the state of a slide toggle without triggering a change event
+      $toggleElem.prop('checked', newState);
+      if (newState) {
+        $toggleElem.parent().removeClass('off');
+        $toggleElem.parent().addClass('btn-primary');
+        $toggleElem.parent().removeClass('btn-default');
+      } else {
+        $toggleElem.parent().addClass('off');
+        $toggleElem.parent().removeClass('btn-primary');
+        $toggleElem.parent().addClass('btn-default');
+      }
+    };
+
     var fetchLatestUserInfo = function () {
       fetch('/users.json').then(function (response) {
         return response.json();
       }).then(function (users) {
         users.forEach(function (user) {
-          console.log(user);
           var $user = $('tr[data-user-id=' + user.id + ']');
-          if (user.countdown > 0 && user.countdown < 60){
-            $user.find('td#user' + user.id + '-countdown').text('less than one');
-          }else{
-            $user.find('td#user' + user.id + '-countdown').text((user.countdown / 60).toFixed(0));
+          if (user.countdown > 0 && user.countdown < 60) {
+            $user.find('#user' + user.id + '-countdown').text('less than one');
+          } else {
+            $user.find('#user' + user.id + '-countdown').text((user.countdown / 60).toFixed(0));
           }
-          var $status = $user.find('td#user' + user.id + '-status');
-          $status.prop('checked', user.active).parent().bootstrapToggle(user.countdown > 0 ? 'enable' : 'disable');
-          $user.find('td#user' + user.id + '-active').text(user.active);
+          var $status = $user.find('#user' + user.id + '-status');
+          setToggleState($status, user.active);
+          $status.bootstrapToggle(user.countdown > 0 ? 'enable' : 'disable');
+          $user.find('#user' + user.id + '-active').text(user.active);
         });
       });
     };

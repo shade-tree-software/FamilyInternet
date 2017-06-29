@@ -29,7 +29,13 @@ class User < ApplicationRecord
 
   def update_active_state(new_active_status)
     old_active_status = self.active
-    self.active = new_active_status && self.has_time_remaining
+    if has_time_remaining
+      self.active = new_active_status
+    else
+      self.active = false
+    end
+
+    puts "self.active: #{self.active}"
 
     if old_active_status
       # update countdown if we were active, regardless of what we are now
