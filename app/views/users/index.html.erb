@@ -16,7 +16,7 @@
     <% @users.each do |user| %>
       <tr data-user-id="<%= user.id %>">
         <td><%= user.name %></td>
-        <td id='<%= "user#{user.id}-countdown" %>'><%= user.expiration ? 'calculating...' : 'unlimited' %></td>
+        <td id='<%= "user#{user.id}-countdown" %>'>calculating...</td>
         <td><input id='<%= "user#{user.id}-status" %>'
                    class='user-status'
                    <%= user.active ? 'checked' : '' %>
@@ -33,23 +33,23 @@
 
 <script>
   $(document).ready(function(){
-    $('.user-status').change(function() {
+    var toggleUserActive = function() {
       $(this).bootstrapToggle('disable');
       var checked = $(this).is(':checked');
       $.ajax({
         context: this,
-		    type: 'POST', // Use POST with X-HTTP-Method-Override or a straight PUT if appropriate.
-		    dataType: 'json', // Set datatype - affects Accept header
-		    url: '/users/' +  $(this).attr('data-userid') + '.json', // A valid URL
-		    headers: {"X-HTTP-Method-Override": "PUT"}, // X-HTTP-Method-Override set to PUT.
-		    data: {user: {active: checked}}, // Some data e.g. Valid JSON as a string
+        type: 'POST', // Use POST with X-HTTP-Method-Override or a straight PUT if appropriate.
+        dataType: 'json', // Set datatype - affects Accept header
+        url: '/users/' +  $(this).attr('data-userid') + '.json', // A valid URL
+        headers: {"X-HTTP-Method-Override": "PUT"}, // X-HTTP-Method-Override set to PUT.
+        data: {user: {active: checked}}, // Some data e.g. Valid JSON as a string
         success: function(){
-		      if (checked) {
+          if (checked) {
               toastr.success('Internet successfully enabled.');
           }else{
               toastr.info('Internet successfully disabled.');
           }
-		    },
+        },
         error: function(){
             toastr.error('Unable to ' + (checked ? 'enable' : 'disable') + ' internet.');
             // revert the slide toggle without triggering the event handler
@@ -61,11 +61,11 @@
         complete: function(){
             $(this).bootstrapToggle('enable');
         }
-		  });
-    });
-    var USER_FETCH_INTERVAL = 10000;
-    setInterval(function(){
-      // Fetch updated user info periodically
+      });
+    }
+    $('.user-status').change(toggleUserActive);
+
+    var fetchLatestUserInfo = function(){
       fetch('/users.json').then(function(response){
         return response.json();
       }).then(function(users){
@@ -88,6 +88,10 @@
           $user.find('td#user' + user.id + '-countdown').text(minutesRemaining);
         });
       });
-    }, USER_FETCH_INTERVAL);
+    }
+
+    fetchLatestUserInfo();
+    var USER_FETCH_INTERVAL = 10000;
+    setInterval(fetchLatestUserInfo, USER_FETCH_INTERVAL);
   });
 </script>
