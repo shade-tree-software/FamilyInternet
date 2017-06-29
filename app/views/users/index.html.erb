@@ -4,16 +4,16 @@
 
 <table class="table">
   <thead>
-    <tr>
-      <th>Name</th>
-      <th>Minutes Remaining</th>
-      <th>Status</th>
-      <th>Active</th>
-    </tr>
+  <tr>
+    <th>Name</th>
+    <th>Minutes Remaining</th>
+    <th>Status</th>
+    <th>Active</th>
+  </tr>
   </thead>
 
   <tbody>
-    <% @users.each do |user| %>
+  <% @users.each do |user| %>
       <tr data-user-id="<%= user.id %>">
         <td><%= user.name %></td>
         <td id='<%= "user#{user.id}-countdown" %>'>calculating...</td>
@@ -25,70 +25,64 @@
                    type="checkbox"></td>
         <td id='<%= "user#{user.id}-active" %>'><%= user.active %></td>
       </tr>
-    <% end %>
+  <% end %>
   </tbody>
 </table>
 
 <br>
 
 <script>
-  $(document).ready(function(){
-    var toggleUserActive = function() {
+  $(document).ready(function () {
+    var toggleUserActive = function () {
       $(this).bootstrapToggle('disable');
       var checked = $(this).is(':checked');
       $.ajax({
         context: this,
         type: 'POST', // Use POST with X-HTTP-Method-Override or a straight PUT if appropriate.
         dataType: 'json', // Set datatype - affects Accept header
-        url: '/users/' +  $(this).attr('data-userid') + '.json', // A valid URL
+        url: '/users/' + $(this).attr('data-userid') + '.json', // A valid URL
         headers: {"X-HTTP-Method-Override": "PUT"}, // X-HTTP-Method-Override set to PUT.
         data: {user: {active: checked}}, // Some data e.g. Valid JSON as a string
-        success: function(){
+        success: function () {
           if (checked) {
-              toastr.success('Internet successfully enabled.');
-          }else{
-              toastr.info('Internet successfully disabled.');
+            toastr.success('Internet successfully enabled.');
+          } else {
+            toastr.info('Internet successfully disabled.');
           }
         },
-        error: function(){
-            toastr.error('Unable to ' + (checked ? 'enable' : 'disable') + ' internet.');
-            // revert the slide toggle without triggering the event handler
-            $(this).prop('checked', !checked);
-            $(this).parent().toggleClass('off');
-            $(this).parent().toggleClass('btn-primary');
-            $(this).parent().toggleClass('btn-default');
+        error: function () {
+          toastr.error('Unable to ' + (checked ? 'enable' : 'disable') + ' internet.');
+          // revert the slide toggle without triggering the event handler
+          $(this).prop('checked', !checked);
+          $(this).parent().toggleClass('off');
+          $(this).parent().toggleClass('btn-primary');
+          $(this).parent().toggleClass('btn-default');
         },
-        complete: function(){
-            $(this).bootstrapToggle('enable');
+        complete: function () {
+          $(this).bootstrapToggle('enable');
         }
       });
-    }
+    };
     $('.user-status').change(toggleUserActive);
 
-    var fetchLatestUserInfo = function(){
-      fetch('/users.json').then(function(response){
+    var fetchLatestUserInfo = function () {
+      fetch('/users.json').then(function (response) {
         return response.json();
-      }).then(function(users){
-        users.forEach(function(user){
+      }).then(function (users) {
+        users.forEach(function (user) {
+          console.log(user);
           var $user = $('tr[data-user-id=' + user.id + ']');
-          $user.find('td#user' + user.id + '-active').text(user.active);
-          var minutesRemaining = 0;
-          if (user.active) {
-            // If user is active, calculate minutes remaining based on user.expiration
-            var currentTimeInSecs = parseInt(((+new Date()) / 1000).toFixed(0), 10);
-            var expirationTime = user.expiration || currentTimeInSecs;
-            var secondsRemaining = expirationTime - currentTimeInSecs;
-            if (secondsRemaining >= 0) {
-              minutesRemaining = (secondsRemaining / 60).toFixed(0);
-            }
-          } else {
-            // If user is not active, minutes remaining is user.countdown / 60
-            minutesRemaining = (user.countdown / 60).toFixed(0);
+          if (user.countdown > 0 && user.countdown < 60){
+            $user.find('td#user' + user.id + '-countdown').text('less than one');
+          }else{
+            $user.find('td#user' + user.id + '-countdown').text((user.countdown / 60).toFixed(0));
           }
-          $user.find('td#user' + user.id + '-countdown').text(minutesRemaining);
+          var $status = $user.find('td#user' + user.id + '-status');
+          $status.prop('checked', user.active).parent().bootstrapToggle(user.countdown > 0 ? 'enable' : 'disable');
+          $user.find('td#user' + user.id + '-active').text(user.active);
         });
       });
-    }
+    };
 
     fetchLatestUserInfo();
     var USER_FETCH_INTERVAL = 10000;

@@ -5,9 +5,15 @@ class UsersController < ApplicationController
   # GET /users.json
   def index
     @users = User.all
+
+    # update each user's properties before sending them out
+    @users.each do |user|
+      user.update_properties if user.active
+    end
+
     respond_to do |format|
       format.html
-      format.json {render json: @users}
+      format.json { render json: @users }
     end
   end
 
@@ -16,7 +22,7 @@ class UsersController < ApplicationController
   def show
     respond_to do |format|
       format.html
-      format.json {render json: @user}
+      format.json { render json: @user }
     end
   end
 
@@ -48,23 +54,21 @@ class UsersController < ApplicationController
   # PATCH/PUT /users/1
   # PATCH/PUT /users/1.json
   def update
+    attrs = user_params.as_json
+
+    # Update only if this is a request to activate or deactivate the user.
+    # In addition, activation is allowed only if the user has time remaining.
+    # All other change requests are denied.
+    valid_request = attrs.length == 1 &&
+        attrs.has_key?('active') &&
+        (attrs['active'] == 'false' || attrs['active'] == false || @user.has_time_remaining)
+
+    if valid_request
+      @user.update_active_state(attrs['active'] || attrs['active'] == 'true')
+    end
+
     respond_to do |format|
-      attrs = user_params.as_json
-      expiration_time = @user.expiration || Time.now.to_i
-      # If switching from inactive to active user, set new expiration time
-      # based on previously stored countdown value
-      if @user.active == false && (attrs['active'] == 'true' || attrs['active'] == true)
-        attrs[:expiration] = expiration_time = Time.now.to_i + @user.countdown
-      end
-
-      #TODO: fail update if active requested but no minutes remaining
-
-      # Update countdown based on difference between current time and expiration time
-      secs_left = (expiration_time - Time.now.to_i)
-      secs_left = secs_left >= 0 ? secs_left : 0
-      attrs[:countdown] = secs_left
-      puts attrs
-      if @user.update(attrs)
+      if valid_request
         format.html { redirect_to action: "index", notice: 'User was successfully updated.' }
         format.json { render :show, status: :ok, location: @user }
       else
@@ -85,13 +89,13 @@ class UsersController < ApplicationController
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
-    def set_user
-      @user = User.find(params[:id])
-    end
+  # Use callbacks to share common setup or constraints between actions.
+  def set_user
+    @user = User.find(params[:id])
+  end
 
-    # Never trust parameters from the scary internet, only allow the white list through.
-    def user_params
-      params.require(:user).permit(:active)
-    end
+  # Never trust parameters from the scary internet, only allow the white list through.
+  def user_params
+    params.require(:user).permit(:active)
+  end
 end
