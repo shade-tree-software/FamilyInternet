@@ -18,9 +18,9 @@ class User < ApplicationRecord
     self.expiration = Time.now.to_i + self.countdown
     self.save
 
-    iptables_cmd = "sudo -S iptables -I FORWARD -m mac --mac-source DC:EE:06:FE:52:82 -j ACCEPT -m time --datestop #{Time.at(self.expiration).utc.strftime('%FT%T')}"
-    echo_cmd = "echo \"pw\" | #{iptables_cmd}"
-    puts(echo_cmd)
+    echo_cmd = "./macaddr on DC:EE:06:FE:52:82 #{Time.at(self.expiration).utc.strftime('%FT%T')}"
+    puts echo_cmd
+    puts `#{echo_cmd}`
   end
 
   def update_properties
