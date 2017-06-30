@@ -8,7 +8,6 @@
     <th>Name</th>
     <th>Minutes Remaining</th>
     <th>Status</th>
-    <th>Active</th>
   </tr>
   </thead>
 
@@ -23,7 +22,6 @@
                    data-toggle="toggle"
                    data-userid='<%= user.id %>'
                    type="checkbox"></td>
-        <td id='<%= "user#{user.id}-active" %>'><%= user.active %></td>
       </tr>
   <% end %>
   </tbody>
@@ -95,7 +93,6 @@
           var $status = $user.find('#user' + user.id + '-status');
           setToggleState($status, user.active);
           $status.bootstrapToggle(user.countdown > 0 ? 'enable' : 'disable');
-          $user.find('#user' + user.id + '-active').text(user.active);
         });
       });
     };
