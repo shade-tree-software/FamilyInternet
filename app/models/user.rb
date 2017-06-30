@@ -42,6 +42,12 @@ class User < ApplicationRecord
     end
 
     if old_active_status
+      unless new_active_status
+        # remove any lingering firewall rule
+        echo_cmd = "./macaddr off DC:EE:06:FE:52:82 #{Time.at(self.expiration).utc.strftime('%FT%T')}"
+        puts echo_cmd
+        puts `#{echo_cmd}`
+      end
       # update countdown if we were active, regardless of what we are now
       self.update_countdown
     elsif new_active_status
