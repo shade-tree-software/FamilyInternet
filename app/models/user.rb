@@ -16,11 +16,13 @@ class User < ApplicationRecord
 
   def update_expiration
     self.expiration = Time.now.to_i + self.countdown
-    self.save
 
     echo_cmd = "./macaddr on DC:EE:06:FE:52:82 #{Time.at(self.expiration).utc.strftime('%FT%T')}"
     puts echo_cmd
-    puts `#{echo_cmd}`
+    result = `#{echo_cmd}`
+    raise "cannot add permission to firewall" if result.rstrip.end_with?('result: 0') == false
+
+    self.save
   end
 
   def update_properties

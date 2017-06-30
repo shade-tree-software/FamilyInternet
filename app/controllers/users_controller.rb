@@ -64,7 +64,11 @@ class UsersController < ApplicationController
         (attrs['active'] == 'false' || attrs['active'] == false || @user.has_time_remaining)
 
     if valid_request
-      @user.update_active_state(attrs['active'] || attrs['active'] == 'true')
+      begin
+        @user.update_active_state(attrs['active'] || attrs['active'] == 'true')
+      rescue
+        valid_request = false
+      end
     end
 
     respond_to do |format|
