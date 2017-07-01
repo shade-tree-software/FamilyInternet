@@ -8,7 +8,7 @@ class UsersController < ApplicationController
 
     # update each user's properties before sending them out
     @users.each do |user|
-      user.update_properties if user.active
+      user.update_properties
     end
 
     respond_to do |format|
@@ -61,7 +61,7 @@ class UsersController < ApplicationController
     # All other change requests are denied.
     valid_request = attrs.length == 1 &&
         attrs.has_key?('active') &&
-        (attrs['active'] == 'false' || attrs['active'] == false || @user.has_time_remaining)
+        (attrs['active'] == 'false' || attrs['active'] == false || @user.good_to_go)
 
     if valid_request
       begin
