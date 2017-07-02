@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170701231319) do
+ActiveRecord::Schema.define(version: 20170702140537) do
 
   create_table "users", force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8" do |t|
     t.string "name"
@@ -22,6 +22,8 @@ ActiveRecord::Schema.define(version: 20170701231319) do
     t.string "mac_address"
     t.date "today"
     t.integer "minutes_per_day", default: 60
+    t.string "wakeup", default: "06:00"
+    t.string "bedtime", default: "21:00"
   end
 
 end

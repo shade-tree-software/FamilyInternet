@@ -5,7 +5,7 @@ class User < ApplicationRecord
   end
 
   def in_active_window
-    true
+    Time.now.between? Time.parse(self.wakeup), Time.parse(self.bedtime)
   end
 
   def is_correct_day
@@ -16,71 +16,73 @@ class User < ApplicationRecord
     is_correct_day && in_active_window && has_time_remaining
   end
 
-  def update_countdown
-    self.countdown = self.expiration - Time.now.to_i
-    self.countdown = 0 if self.countdown < 0
-    self.save
+  def seconds_until_bedtime
+    res = in_active_window ? Time.parse(self.bedtime) - Time.now : 0
+    res >= 0 ? res : 0
   end
 
-  def update_expiration
-    self.expiration = Time.now.to_i + self.countdown
+  def generate_new_countdown
+    # this should be used only when active, because
+    # that's the only time we can trust the expiration
+    self.countdown = self.expiration - Time.now.to_i
+    self.countdown = 0 if self.countdown < 0
+  end
+
+  def generate_new_expiration
+    # this should be used only when not active, because
+    # that's the only time we can trust the countdown
+    self.expiration = Time.now.to_i + [self.countdown, seconds_until_bedtime].min
+  end
+
+  def firewall(command)
+    if command == :allow_user
+      echo_cmd = "./macaddr on #{self.mac_address} #{Time.at(self.expiration).utc.strftime('%FT%T')}"
+      puts echo_cmd
+      result = `#{echo_cmd}`
+      raise "cannot add permission to firewall" unless result.rstrip.end_with?('result: 0')
+    else
+      echo_cmd = "./macaddr off #{self.mac_address} #{Time.at(self.expiration).utc.strftime('%FT%T')}"
+      puts echo_cmd
+      puts `#{echo_cmd}`
+    end
   end
 
   def start_internet
-    update_expiration
-
-    echo_cmd = "./macaddr on #{self.mac_address} #{Time.at(self.expiration).utc.strftime('%FT%T')}"
-    puts echo_cmd
-    result = `#{echo_cmd}`
-    raise "cannot add permission to firewall" unless result.rstrip.end_with?('result: 0')
-
-    self.save
+    self.active = true
+    generate_new_expiration
+    firewall :allow_user
   end
 
   def stop_internet
-    # remove any lingering firewall rule
-    echo_cmd = "./macaddr off #{self.mac_address} #{Time.at(self.expiration).utc.strftime('%FT%T')}"
-    puts echo_cmd
-    puts `#{echo_cmd}`
-
-    update_countdown
+    self.active = false
+    firewall :disallow_user
+    generate_new_countdown
   end
 
-  def reset_day
-    self.today = Date.today
-    self.countdown = self.minutes_per_day * 60
-    self.save
+  def adjust_countdown
+    if in_active_window && !is_correct_day
+      self.today = Date.today
+      self.countdown = self.minutes_per_day * 60
+    end
+    self.countdown = [self.countdown, seconds_until_bedtime].min
   end
 
   def update_properties
     if self.active
-      if self.expiration <= Time.now.to_i
-        update_active_state(false)
-      else
-        update_countdown
-      end
+      (self.expiration <= Time.now.to_i) ? stop_internet : generate_new_countdown
     else
-      reset_day unless is_correct_day
+      adjust_countdown
     end
+    self.save
   end
 
-  def update_active_state(new_active_status)
-    old_active_status = self.active
-    if good_to_go
-      self.active = new_active_status
-    else
-      self.active = false
-    end
-
-    if old_active_status
-      if new_active_status
-        update_countdown
-      else
-        stop_internet
-      end
-    elsif new_active_status
-      # go_active if active state has changed to true
+  def update_internet_state(go_active)
+    if !self.active && go_active
       start_internet
+      self.save
+    elsif self.active && !go_active
+      stop_internet
+      self.save
     end
   end
 end
