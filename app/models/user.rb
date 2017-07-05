@@ -36,12 +36,12 @@ class User < ApplicationRecord
 
   def firewall(command)
     if command == :allow_user
-      echo_cmd = "./macaddr on #{self.mac_address} #{Time.at(self.expiration).utc.strftime('%FT%T')}"
+      echo_cmd = "./macaddr on #{self.username} #{self.mac_address} #{Time.at(self.expiration).utc.strftime('%FT%T')}"
       puts echo_cmd
       result = `#{echo_cmd}`
       raise "cannot add permission to firewall" unless result.rstrip.end_with?('result: 0')
     else
-      echo_cmd = "./macaddr off #{self.mac_address} #{Time.at(self.expiration).utc.strftime('%FT%T')}"
+      echo_cmd = "./macaddr off #{self.username} #{self.mac_address} #{Time.at(self.expiration).utc.strftime('%FT%T')}"
       puts echo_cmd
       puts `#{echo_cmd}`
     end
