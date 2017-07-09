@@ -1,5 +1,7 @@
 <p id="notice"><%= notice %></p>
 
+<div id="mothership" class="alert alert-danger" role="alert" hidden>Oops.  We've lost connection to the mothership.  Information on this page may be incorrect.  Try reloading the page.  If that doesn't solve the problem, call Dad.</div>
+
 <h1>Internet Access</h1>
 
 <table class="table">
@@ -80,9 +82,8 @@
     };
 
     var fetchLatestUserInfo = function () {
-      fetch('/users.json').then(function (response) {
-        return response.json();
-      }).then(function (users) {
+      $.get('/users.json', function (users) {
+        $('#mothership').hide();
         users.forEach(function (user) {
           var $user = $('tr[data-user-id=' + user.id + ']');
           if (user.countdown > 0 && user.countdown < 60) {
@@ -94,6 +95,8 @@
           setToggleState($status, user.active);
           $status.bootstrapToggle(user.countdown > 0 ? 'enable' : 'disable');
         });
+      }).fail(function(){
+        $('#mothership').show();
       });
     };
 
