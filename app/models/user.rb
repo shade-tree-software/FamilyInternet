@@ -1,4 +1,5 @@
 class User < ApplicationRecord
+  has_many :mac_addresses
 
   def has_time_remaining
     (self.active && self.expiration > Time.now.to_i) || (!self.active && self.countdown > 0)
@@ -36,14 +37,18 @@ class User < ApplicationRecord
 
   def firewall(command)
     if command == :allow_user
-      echo_cmd = "./macaddr on #{self.username} #{self.mac_address} #{Time.at(self.expiration).utc.strftime('%FT%T')}"
-      puts echo_cmd
-      result = `#{echo_cmd}`
-      raise "cannot add permission to firewall" unless result.rstrip.end_with?('result: 0')
+      self.mac_addresses.each do |mac_address|
+        echo_cmd = "./macaddr on #{self.username} #{mac_address.mac} #{Time.at(self.expiration).utc.strftime('%FT%T')}"
+        puts echo_cmd
+        result = `#{echo_cmd}`
+        raise "cannot add permission to firewall" unless result.rstrip.end_with?('result: 0')
+      end
     else
-      echo_cmd = "./macaddr off #{self.username} #{self.mac_address} #{Time.at(self.expiration).utc.strftime('%FT%T')}"
-      puts echo_cmd
-      puts `#{echo_cmd}`
+      self.mac_addresses.each do |mac_address|
+        echo_cmd = "./macaddr off #{self.username} #{mac_address.mac} #{Time.at(self.expiration).utc.strftime('%FT%T')}"
+        puts echo_cmd
+        puts `#{echo_cmd}`
+      end
     end
   end
 

@@ -66,8 +66,9 @@ class UsersController < ApplicationController
     if valid_request
       begin
         @user.update_internet_state(attrs['active'] == true || attrs['active'] == 'true')
-      rescue
+      rescue Exception => e
         valid_request = false
+        puts e
       end
     end
 

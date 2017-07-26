@@ -10,7 +10,14 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170705203521) do
+ActiveRecord::Schema.define(version: 20170726180632) do
+
+  create_table "mac_addresses", force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8" do |t|
+    t.string "mac"
+    t.integer "user_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
 
   create_table "users", force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8" do |t|
     t.string "name"
@@ -19,7 +26,6 @@ ActiveRecord::Schema.define(version: 20170705203521) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "expiration"
-    t.string "mac_address"
     t.date "today"
     t.integer "minutes_per_day", default: 60
     t.string "wakeup", default: "06:00"
