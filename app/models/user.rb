@@ -33,7 +33,7 @@ class User < ApplicationRecord
     # this should be used only when not active, because
     # that's the only time we can trust the countdown
     self.expiration = Time.now.to_i + [self.countdown, seconds_until_bedtime].min
-    self.safety_expiration = Time.now.to_i + [self.countdown, seconds_until_bedtime, 30].min
+    self.safety_expiration = Time.now.to_i + [self.countdown, seconds_until_bedtime, 2700].min
   end
 
   def firewall(command)
