@@ -33,19 +33,20 @@ class User < ApplicationRecord
     # this should be used only when not active, because
     # that's the only time we can trust the countdown
     self.expiration = Time.now.to_i + [self.countdown, seconds_until_bedtime].min
+    self.safety_expiration = Time.now.to_i + [self.countdown, seconds_until_bedtime, 30].min
   end
 
   def firewall(command)
     if command == :allow_user
       self.mac_addresses.each do |mac_address|
-        echo_cmd = "./macaddr on #{self.username} #{mac_address.mac} #{Time.at(self.expiration).utc.strftime('%FT%T')}"
+        echo_cmd = "./macaddr on #{self.username} #{mac_address.mac} #{Time.at(self.safety_expiration).utc.strftime('%FT%T')}"
         puts echo_cmd
         result = `#{echo_cmd}`
         raise "cannot add permission to firewall" unless result.rstrip.end_with?('result: 0')
       end
     else
       self.mac_addresses.each do |mac_address|
-        echo_cmd = "./macaddr off #{self.username} #{mac_address.mac} #{Time.at(self.expiration).utc.strftime('%FT%T')}"
+        echo_cmd = "./macaddr off #{self.username} #{mac_address.mac} #{Time.at(self.safety_expiration).utc.strftime('%FT%T')}"
         puts echo_cmd
         puts `#{echo_cmd}`
       end
@@ -74,7 +75,7 @@ class User < ApplicationRecord
 
   def update_properties
     if self.active
-      (self.expiration <= Time.now.to_i) ? stop_internet : generate_new_countdown
+      (self.safety_expiration <= Time.now.to_i) ? stop_internet : generate_new_countdown
     else
       adjust_countdown
     end
