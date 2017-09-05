@@ -1,7 +1,7 @@
 <p id="notice"><%= notice %></p>
 
 <div id="mothership" class="alert alert-danger" role="alert" hidden>Oops.  We've lost connection to the mothership.  Information on this page may be incorrect.  Try reloading the page.  If that doesn't solve the problem, call Dad.</div>
-<div id="info_messages" class="alert alert-info" role="alert" ><ul></ul></div>
+<div id="info_messages" class="alert alert-danger" role="alert" ><ul></ul></div>
 
 <h1>Internet Access</h1>
 
@@ -19,7 +19,7 @@
       <tr data-user-id="<%= user.id %>">
         <td><%= user.name %></td>
         <td id='<%= "user#{user.id}-countdown" %>'>calculating...</td>
-        <td><input id='<%= "user#{user.id}-status" %>'
+        <td id='<%= "user#{user.id}-status-td" %>'><div id="disabled-note" hidden>Disabled</div><input id='<%= "user#{user.id}-status" %>'
                    class='user-status'
                    <%= user.active ? 'checked' : '' %>
                    data-toggle="toggle"
@@ -109,6 +109,16 @@
           var $status = $user.find('#user' + user.id + '-status');
           setToggleState($status, user.active);
           $status.bootstrapToggle(user.countdown > 0 ? 'enable' : 'disable');
+          var $statusTd = $user.find('#user' + user.id + '-status-td');
+          if (user.disabled && !user.active){
+            $user.addClass('red-text');
+            $statusTd.children('div.toggle').hide();
+            $statusTd.children('div#disabled-note').show();
+          }else{
+            $user.removeClass('red-text');
+            $statusTd.children('div.toggle').show();
+            $statusTd.children('div#disabled-note').hide();
+          }
         });
       }).fail(function(){
         $('#mothership').show();

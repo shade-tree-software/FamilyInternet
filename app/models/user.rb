@@ -2,7 +2,7 @@ class User < ApplicationRecord
   has_many :mac_addresses
 
   def has_time_remaining
-    (self.active && self.expiration > Time.now.to_i) || (!self.active && self.countdown > 0)
+    (self.active && self.expiration > Time.now.to_i) || (!self.active && self.countdown > 0 && !self.disabled)
   end
 
   def in_active_window
