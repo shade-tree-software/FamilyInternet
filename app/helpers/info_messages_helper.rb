@@ -1,0 +1,2 @@
+module InfoMessagesHelper
+end

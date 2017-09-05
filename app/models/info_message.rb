@@ -1,0 +1,2 @@
+class InfoMessage < ApplicationRecord
+end
