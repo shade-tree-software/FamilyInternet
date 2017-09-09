@@ -39,14 +39,14 @@ class User < ApplicationRecord
   def firewall(command)
     if command == :allow_user
       self.mac_addresses.each do |mac_address|
-        echo_cmd = "./macaddr on #{self.username} #{mac_address.mac} #{Time.at(self.safety_expiration).utc.strftime('%FT%T')}"
+        echo_cmd = "./ipthelper on #{self.username} #{mac_address.mac} #{Time.at(self.safety_expiration).utc.strftime('%FT%T')}"
         puts echo_cmd
         result = `#{echo_cmd}`
         raise "cannot add permission to firewall" unless result.rstrip.end_with?('result: 0')
       end
     else
       self.mac_addresses.each do |mac_address|
-        echo_cmd = "./macaddr off #{self.username} #{mac_address.mac} #{Time.at(self.safety_expiration).utc.strftime('%FT%T')}"
+        echo_cmd = "./ipthelper off #{self.username} #{mac_address.mac} #{Time.at(self.safety_expiration).utc.strftime('%FT%T')}"
         puts echo_cmd
         puts `#{echo_cmd}`
       end
