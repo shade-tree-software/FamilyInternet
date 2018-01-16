@@ -1,9 +1,18 @@
 <p id="notice"><%= notice %></p>
 
-<div id="mothership" class="alert alert-danger" role="alert" hidden>Oops.  We've lost connection to the mothership.  Information on this page may be incorrect.  Try reloading the page.  If that doesn't solve the problem, call Dad.</div>
-<div id="info_messages" class="alert alert-danger" role="alert" ><ul></ul></div>
+<div id="mothership" class="alert alert-danger" role="alert" hidden>Oops. We've lost connection to the mothership.
+  Information on this page may be incorrect. Try reloading the page. If that doesn't solve the problem, call Dad.
+</div>
+<div id="info_messages" class="alert alert-danger" role="alert">
+  <ul></ul>
+</div>
 
 <h1>Internet Access</h1>
+
+<div>
+  <video autoplay></video>
+</div>
+
 
 <table class="table">
   <thead>
@@ -19,12 +28,15 @@
       <tr data-user-id="<%= user.id %>">
         <td><%= user.name %></td>
         <td id='<%= "user#{user.id}-countdown" %>'>calculating...</td>
-        <td id='<%= "user#{user.id}-status-td" %>'><div id="disabled-note" hidden>Disabled</div><input id='<%= "user#{user.id}-status" %>'
-                   class='user-status'
-                   <%= user.active ? 'checked' : '' %>
-                   data-toggle="toggle"
-                   data-userid='<%= user.id %>'
-                   type="checkbox"></td>
+        <td id='<%= "user#{user.id}-status-td" %>' class="user-status">
+          <div id="disabled-note" hidden>Disabled</div>
+          <input id='<%= "user#{user.id}-status" %>'
+                 class='user-status'
+                 <%= user.active ? 'checked' : '' %>
+                 data-toggle="toggle"
+                 data-userid='<%= user.id %>'
+                 data-userrole='<%= user.role %>'
+                 type="checkbox"></td>
       </tr>
   <% end %>
   </tbody>
@@ -34,39 +46,60 @@
 
 <script>
   $(document).ready(function () {
+    var videoEnabled = false;
+
+    var startCamera = function (cb) {
+      var videoElem = document.querySelector('video');
+      var onError = function (err) {
+        console.log(err);
+      }
+      var initializeVideo = function (mediaStream) {
+        videoElem.srcObject = mediaStream
+        videoEnabled = true;
+        cb();
+      }
+      navigator.mediaDevices.getUserMedia({video: {height: 240, width: 320}})
+        .then(initializeVideo).catch(onError);
+    }
+
     $('input.user-status').bootstrapToggle();
 
-    var toggleUserActive = function () {
-      $(this).bootstrapToggle('disable');
-      var checked = $(this).is(':checked');
-      $.ajax({
-        context: this,
-        type: 'POST', // Use POST with X-HTTP-Method-Override or a straight PUT if appropriate.
-        dataType: 'json', // Set datatype - affects Accept header
-        url: '/users/' + $(this).attr('data-userid') + '.json', // A valid URL
-        headers: {"X-HTTP-Method-Override": "PUT"}, // X-HTTP-Method-Override set to PUT.
-        data: {user: {active: checked}}, // Some data e.g. Valid JSON as a string
-        success: function () {
-          if (checked) {
-            toastr.success('Internet successfully enabled.');
-          } else {
-            toastr.info('Internet successfully disabled.');
+    var toggleClicked = function (e) {
+      e.stopPropagation();
+      var $slideToggle = $(this).find('input')
+      var goActive = !$slideToggle.is(':checked');
+
+      var doAjax = function () {
+        $slideToggle.bootstrapToggle('toggle');
+        $.ajax({
+          context: this,
+          type: 'POST', // Use POST with X-HTTP-Method-Override or a straight PUT if appropriate.
+          dataType: 'json', // Set datatype - affects Accept header
+          url: '/users/' + $slideToggle.attr('data-userid') + '.json', // A valid URL
+          headers: {"X-HTTP-Method-Override": "PUT"}, // X-HTTP-Method-Override set to PUT.
+          data: {user: {active: goActive, camera: videoEnabled}}, // Some data e.g. Valid JSON as a string
+          success: function () {
+            if (goActive) {
+              toastr.success('Internet successfully enabled.');
+            } else {
+              toastr.info('Internet successfully disabled.');
+            }
+          },
+          error: function () {
+            toastr.error('Unable to ' + (goActive ? 'enable' : 'disable') + ' internet.');
+            $slideToggle.bootstrapToggle('toggle');
           }
-        },
-        error: function () {
-          toastr.error('Unable to ' + (checked ? 'enable' : 'disable') + ' internet.');
-          // revert the slide toggle without triggering a change event
-          $(this).prop('checked', !checked);
-          $(this).parent().toggleClass('off');
-          $(this).parent().toggleClass('btn-primary');
-          $(this).parent().toggleClass('btn-default');
-        },
-        complete: function () {
-          $(this).bootstrapToggle('enable');
-        }
-      });
-    };
-    $('.user-status').change(toggleUserActive);
+        });
+      }
+
+      if ($slideToggle.attr('data-userrole') !== '0') {
+        startCamera(doAjax);
+      } else {
+        doAjax();
+      }
+    }
+
+    $('td.user-status').click(toggleClicked);
 
     var setToggleState = function ($toggleElem, newState) {
       // Update the state of a slide toggle without triggering a change event
@@ -83,12 +116,12 @@
     };
 
     var fetchLatestUserInfo = function () {
-      $.get('/info_messages.json', function(info_messages){
+      $.get('/info_messages.json', function (info_messages) {
         var $infoMessages = $('#info_messages');
-        if (info_messages.length > 0){
+        if (info_messages.length > 0) {
           $infoMessages.show();
           var $infoUl = $('<ul>');
-          info_messages.forEach(function (info_message){
+          info_messages.forEach(function (info_message) {
             $infoUl.append($('<li>' + info_message.text + '</li>'));
           });
           $infoMessages.find('ul').replaceWith($infoUl);
@@ -110,17 +143,17 @@
           setToggleState($status, user.active);
           $status.bootstrapToggle(user.countdown > 0 ? 'enable' : 'disable');
           var $statusTd = $user.find('#user' + user.id + '-status-td');
-          if (user.disabled && !user.active){
+          if (user.disabled && !user.active) {
             $user.addClass('red-text');
             $statusTd.children('div.toggle').hide();
             $statusTd.children('div#disabled-note').show();
-          }else{
+          } else {
             $user.removeClass('red-text');
             $statusTd.children('div.toggle').show();
             $statusTd.children('div#disabled-note').hide();
           }
         });
-      }).fail(function(){
+      }).fail(function () {
         $('#mothership').show();
       });
     };

@@ -13,7 +13,7 @@ class UsersController < ApplicationController
 
     respond_to do |format|
       format.html
-      format.json { render json: @users }
+      format.json {render json: @users}
     end
   end
 
@@ -22,7 +22,7 @@ class UsersController < ApplicationController
   def show
     respond_to do |format|
       format.html
-      format.json { render json: @user }
+      format.json {render json: @user}
     end
   end
 
@@ -42,11 +42,11 @@ class UsersController < ApplicationController
 
     respond_to do |format|
       if @user.save
-        format.html { redirect_to action: "index", notice: 'User was successfully created.' }
-        format.json { render :show, status: :created, location: @user }
+        format.html {redirect_to action: "index", notice: 'User was successfully created.'}
+        format.json {render :show, status: :created, location: @user}
       else
-        format.html { render :new }
-        format.json { render json: @user.errors, status: :unprocessable_entity }
+        format.html {render :new}
+        format.json {render json: @user.errors, status: :unprocessable_entity}
       end
     end
   end
@@ -56,12 +56,24 @@ class UsersController < ApplicationController
   def update
     attrs = user_params.as_json
 
+    puts attrs
+
     # Update only if this is a request to activate or deactivate the user.
     # In addition, activation is allowed only if the user has time remaining.
     # All other change requests are denied.
-    valid_request = attrs.length == 1 &&
-        attrs.has_key?('active') &&
-        (attrs['active'] == 'false' || attrs['active'] == false || @user.good_to_go)
+    valid_request = false
+
+    if !attrs.has_key?('camera')
+      puts('Missing param "camera"')
+    elsif (attrs['camera'] == 'false' || !attrs['camera']) && @user.role > 0
+      puts('camera must be on for regular users')
+    elsif !attrs.has_key?('active')
+      puts('Missing param "active"')
+    elsif (attrs['active'] != 'false' || attrs['active']) && !@user.good_to_go
+      puts('cannot activate user')
+    else
+      valid_request = true
+    end
 
     if valid_request
       begin
@@ -74,11 +86,11 @@ class UsersController < ApplicationController
 
     respond_to do |format|
       if valid_request
-        format.html { redirect_to action: "index", notice: 'User was successfully updated.' }
-        format.json { render :show, status: :ok, location: @user }
+        format.html {redirect_to action: "index", notice: 'User was successfully updated.'}
+        format.json {render :show, status: :ok, location: @user}
       else
-        format.html { render :edit }
-        format.json { render json: @user.errors, status: :unprocessable_entity }
+        format.html {render :edit}
+        format.json {render json: @user.errors, status: :unprocessable_entity}
       end
     end
   end
@@ -88,8 +100,8 @@ class UsersController < ApplicationController
   def destroy
     @user.destroy
     respond_to do |format|
-      format.html { redirect_to users_url, notice: 'User was successfully destroyed.' }
-      format.json { head :no_content }
+      format.html {redirect_to users_url, notice: 'User was successfully destroyed.'}
+      format.json {head :no_content}
     end
   end
 
@@ -101,6 +113,6 @@ class UsersController < ApplicationController
 
   # Never trust parameters from the scary internet, only allow the white list through.
   def user_params
-    params.require(:user).permit(:active)
+    params.require(:user).permit(:active, :camera)
   end
 end
