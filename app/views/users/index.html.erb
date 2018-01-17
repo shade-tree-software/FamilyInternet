@@ -5,10 +5,11 @@
 
 <h1>Internet Access</h1>
 
-<table class="table">
+<table class="table table-striped table-responsive">
   <thead>
   <tr>
     <th>Name</th>
+    <th>Time Range</th>
     <th>Minutes Remaining</th>
     <th>Status</th>
   </tr>
@@ -18,6 +19,7 @@
   <% @users.each do |user| %>
       <tr data-user-id="<%= user.id %>">
         <td><%= user.name %></td>
+        <td id='<%= "user#{user.id}-timerange" %>'><%= "#{user.wakeup} to #{user.bedtime}" %></td>
         <td id='<%= "user#{user.id}-countdown" %>'>calculating...</td>
         <td id='<%= "user#{user.id}-status-td" %>'><div id="disabled-note" hidden>Disabled</div><input id='<%= "user#{user.id}-status" %>'
                    class='user-status'
@@ -106,6 +108,8 @@
           } else {
             $user.find('#user' + user.id + '-countdown').text((user.countdown / 60).toFixed(0));
           }
+          var $timeRange = $user.find('#user' + user.id + '-timerange');
+          $timeRange.text(user.wakeup + ' to ' + user.bedtime);
           var $status = $user.find('#user' + user.id + '-status');
           setToggleState($status, user.active);
           $status.bootstrapToggle(user.countdown > 0 ? 'enable' : 'disable');
