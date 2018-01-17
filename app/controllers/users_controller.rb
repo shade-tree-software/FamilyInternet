@@ -64,12 +64,16 @@ class UsersController < ApplicationController
 
     if !attrs.has_key?('camera')
       failure_reason = 'Missing param: camera.'
-    elsif (attrs['camera'] == 'false' || !attrs['camera']) && @user.role > 0
-      failure_reason = 'Camera required.'
     elsif !attrs.has_key?('active')
       failure_reason = 'Missing param: active.'
-    elsif (attrs['active'] != 'false' || attrs['active']) && !@user.good_to_go
-      failure_reason = 'User cannot be activated right now.'
+    elsif attrs['active'] == 'true'
+      if !@user.good_to_go
+        failure_reason = 'User cannot be activated right now.'
+      elsif attrs['camera'] == 'false' && @user.role > 0
+        failure_reason = 'Camera required.'
+      else
+        valid_request = true
+      end
     else
       valid_request = true
     end
@@ -79,7 +83,8 @@ class UsersController < ApplicationController
         @user.update_internet_state(attrs['active'] == true || attrs['active'] == 'true')
       rescue Exception => e
         valid_request = false
-        puts e
+        failure_reason = e.message
+        puts failure_reason
       end
     end
 
