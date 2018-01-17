@@ -56,21 +56,20 @@ class UsersController < ApplicationController
   def update
     attrs = user_params.as_json
 
-    puts attrs
-
     # Update only if this is a request to activate or deactivate the user.
     # In addition, activation is allowed only if the user has time remaining.
     # All other change requests are denied.
     valid_request = false
+    failure_reason = ''
 
     if !attrs.has_key?('camera')
-      puts('Missing param "camera"')
+      failure_reason = 'Missing param: camera.'
     elsif (attrs['camera'] == 'false' || !attrs['camera']) && @user.role > 0
-      puts('camera must be on for regular users')
+      failure_reason = 'Camera required.'
     elsif !attrs.has_key?('active')
-      puts('Missing param "active"')
+      failure_reason = 'Missing param: active.'
     elsif (attrs['active'] != 'false' || attrs['active']) && !@user.good_to_go
-      puts('cannot activate user')
+      failure_reason = 'User cannot be activated right now.'
     else
       valid_request = true
     end
@@ -90,7 +89,7 @@ class UsersController < ApplicationController
         format.json {render :show, status: :ok, location: @user}
       else
         format.html {render :edit}
-        format.json {render json: @user.errors, status: :unprocessable_entity}
+        format.json {render json: {error: failure_reason}, status: :bad_request}
       end
     end
   end

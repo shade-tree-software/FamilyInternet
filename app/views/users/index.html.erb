@@ -51,7 +51,8 @@
     var startCamera = function (cb) {
       var videoElem = document.querySelector('video');
       var onError = function (err) {
-        console.log(err);
+        console.log('unable to access camera: ' + err.message);
+        cb();
       }
       var initializeVideo = function (mediaStream) {
         videoElem.srcObject = mediaStream
@@ -64,13 +65,21 @@
 
     $('input.user-status').bootstrapToggle();
 
+    var toggleWithoutEvent = function ($elem) {
+      // switch the state of a slide toggle without triggering a change event
+      $elem.prop('checked', !$elem.is(':checked'));
+      $elem.parent().toggleClass('off');
+      $elem.parent().toggleClass('btn-primary');
+      $elem.parent().toggleClass('btn-default');
+    }
+
     var toggleClicked = function (e) {
       e.stopPropagation();
       var $slideToggle = $(this).find('input')
+      $slideToggle.bootstrapToggle('disable');
       var goActive = !$slideToggle.is(':checked');
 
       var doAjax = function () {
-        $slideToggle.bootstrapToggle('toggle');
         $.ajax({
           context: this,
           type: 'POST', // Use POST with X-HTTP-Method-Override or a straight PUT if appropriate.
@@ -78,21 +87,34 @@
           url: '/users/' + $slideToggle.attr('data-userid') + '.json', // A valid URL
           headers: {"X-HTTP-Method-Override": "PUT"}, // X-HTTP-Method-Override set to PUT.
           data: {user: {active: goActive, camera: videoEnabled}}, // Some data e.g. Valid JSON as a string
-          success: function () {
-            if (goActive) {
-              toastr.success('Internet successfully enabled.');
+          success: function (data, textStatus, jqXHR) {
+            var resp = JSON.parse(jqXHR.responseText)
+            if (resp.error) {
+              toastr.error('Unable to ' + (goActive ? 'enable' : 'disable') + ' internet.  ' + resp.error);
             } else {
-              toastr.info('Internet successfully disabled.');
+              if (goActive) {
+                toastr.success('Internet successfully enabled.');
+              } else {
+                toastr.info('Internet successfully disabled.');
+              }
+              toggleWithoutEvent($slideToggle)
             }
           },
-          error: function () {
-            toastr.error('Unable to ' + (goActive ? 'enable' : 'disable') + ' internet.');
-            $slideToggle.bootstrapToggle('toggle');
+          error: function (jqXHR) {
+            var resp = JSON.parse(jqXHR.responseText)
+            if (resp.error) {
+              toastr.error('Unable to ' + (goActive ? 'enable' : 'disable') + ' internet.  ' + resp.error);
+            } else {
+              toastr.error('Unable to ' + (goActive ? 'enable' : 'disable') + ' internet.  ');
+            }
+          },
+          complete: function () {
+            $slideToggle.bootstrapToggle('enable');
           }
         });
       }
 
-      if ($slideToggle.attr('data-userrole') !== '0') {
+      if (goActive && $slideToggle.attr('data-userrole') !== '0' && !videoEnabled) {
         startCamera(doAjax);
       } else {
         doAjax();

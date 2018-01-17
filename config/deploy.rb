@@ -2,7 +2,7 @@
 lock "3.8.1"
 
 set :application, "family_internet"
-set :repo_url, "https://github.com/shade-tree-software/family_internet.git"
+set :repo_url, "https://github.com/shade-tree-software/FamilyInternet.git"
 
 # Default branch is :master
 # ask :branch, `git rev-parse --abbrev-ref HEAD`.chomp
