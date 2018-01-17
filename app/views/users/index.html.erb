@@ -111,7 +111,7 @@
           },
           complete: function () {
             $slideToggle.bootstrapToggle('enable');
-            if (!$slideToggle.is(':checked')) {
+            if (!$slideToggle.is(':checked') && $slideToggle.attr('data-userrole') !== '0') {
               document.querySelector('video').srcObject = null
               videoEnabled = false;
             }
