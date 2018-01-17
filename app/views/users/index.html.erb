@@ -13,11 +13,11 @@
   <video autoplay></video>
 </div>
 
-
-<table class="table">
+<table class="table table-striped table-responsive">
   <thead>
   <tr>
     <th>Name</th>
+    <th>Time Range</th>
     <th>Minutes Remaining</th>
     <th>Status</th>
   </tr>
@@ -27,16 +27,17 @@
   <% @users.each do |user| %>
       <tr data-user-id="<%= user.id %>">
         <td><%= user.name %></td>
+        <td id='<%= "user#{user.id}-timerange" %>'><%= "#{user.wakeup} to #{user.bedtime}" %></td>
         <td id='<%= "user#{user.id}-countdown" %>'>calculating...</td>
         <td id='<%= "user#{user.id}-status-td" %>' class="user-status">
           <div id="disabled-note" hidden>Disabled</div>
           <input id='<%= "user#{user.id}-status" %>'
-                 class='user-status'
-                 <%= user.active ? 'checked' : '' %>
-                 data-toggle="toggle"
-                 data-userid='<%= user.id %>'
+                   class='user-status'
+                   <%= user.active ? 'checked' : '' %>
+                   data-toggle="toggle"
+                   data-userid='<%= user.id %>'
                  data-userrole='<%= user.role %>'
-                 type="checkbox"></td>
+                   type="checkbox"></td>
       </tr>
   <% end %>
   </tbody>
@@ -80,12 +81,12 @@
       var goActive = !$slideToggle.is(':checked');
 
       var doAjax = function () {
-        $.ajax({
-          context: this,
-          type: 'POST', // Use POST with X-HTTP-Method-Override or a straight PUT if appropriate.
-          dataType: 'json', // Set datatype - affects Accept header
+      $.ajax({
+        context: this,
+        type: 'POST', // Use POST with X-HTTP-Method-Override or a straight PUT if appropriate.
+        dataType: 'json', // Set datatype - affects Accept header
           url: '/users/' + $slideToggle.attr('data-userid') + '.json', // A valid URL
-          headers: {"X-HTTP-Method-Override": "PUT"}, // X-HTTP-Method-Override set to PUT.
+        headers: {"X-HTTP-Method-Override": "PUT"}, // X-HTTP-Method-Override set to PUT.
           data: {user: {active: goActive, camera: videoEnabled}}, // Some data e.g. Valid JSON as a string
           success: function (data, textStatus, jqXHR) {
             var resp = JSON.parse(jqXHR.responseText)
@@ -93,13 +94,13 @@
               toastr.error('Unable to ' + (goActive ? 'enable' : 'disable') + ' internet.  ' + resp.error);
             } else {
               if (goActive) {
-                toastr.success('Internet successfully enabled.');
-              } else {
-                toastr.info('Internet successfully disabled.');
-              }
+            toastr.success('Internet successfully enabled.');
+          } else {
+            toastr.info('Internet successfully disabled.');
+          }
               toggleWithoutEvent($slideToggle)
             }
-          },
+        },
           error: function (jqXHR) {
             var resp = JSON.parse(jqXHR.responseText)
             if (resp.error) {
@@ -107,11 +108,11 @@
             } else {
               toastr.error('Unable to ' + (goActive ? 'enable' : 'disable') + ' internet.  ');
             }
-          },
-          complete: function () {
+        },
+        complete: function () {
             $slideToggle.bootstrapToggle('enable');
-          }
-        });
+        }
+      });
       }
 
       if (goActive && $slideToggle.attr('data-userrole') !== '0' && !videoEnabled) {
@@ -161,6 +162,8 @@
           } else {
             $user.find('#user' + user.id + '-countdown').text((user.countdown / 60).toFixed(0));
           }
+          var $timeRange = $user.find('#user' + user.id + '-timerange');
+          $timeRange.text(user.wakeup + ' to ' + user.bedtime);
           var $status = $user.find('#user' + user.id + '-status');
           setToggleState($status, user.active);
           $status.bootstrapToggle(user.countdown > 0 ? 'enable' : 'disable');
