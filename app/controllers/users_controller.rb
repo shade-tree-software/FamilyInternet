@@ -1,5 +1,5 @@
 class UsersController < ApplicationController
-  before_action :set_user, only: [:show, :edit, :update, :destroy]
+  before_action :set_user, only: [:show, :edit, :update, :destroy, :set]
 
   # GET /users
   # GET /users.json
@@ -49,6 +49,17 @@ class UsersController < ApplicationController
         format.json { render json: @user.errors, status: :unprocessable_entity }
       end
     end
+  end
+
+  # GET /users/1/set
+  def set
+    if params[:time]
+      @user = User.find params[:id]
+      @user.minutes_per_day = params[:time].to_i
+      @user.today = nil
+      @user.save
+    end
+    redirect_to '/'
   end
 
   # PATCH/PUT /users/1
@@ -101,6 +112,6 @@ class UsersController < ApplicationController
 
   # Never trust parameters from the scary internet, only allow the white list through.
   def user_params
-    params.require(:user).permit(:active)
+    params.require(:user).permit(:active, :time)
   end
 end
